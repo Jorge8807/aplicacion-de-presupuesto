@@ -468,6 +468,19 @@ h2 {
     }
 }
 
+@media (hover: none), (pointer: coarse) {
+    .elemento_editar--btn,
+    .elemento_eliminar--btn {
+        display: inline-block;
+        opacity: 1;
+    }
+
+    .elemento:hover .elemento_valor,
+    .elemento:hover .elemento_porcentaje {
+        transform: none;
+    }
+}
+
 @media (max-width: 920px) {
     .presupuesto {
         width: calc(100% - 32px);

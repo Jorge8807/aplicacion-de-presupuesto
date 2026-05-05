@@ -38,6 +38,13 @@ const formatoPorcentaje = valor => valor.toLocaleString("es-MX", {
     minimumFractionDigits: 2
 });
 
+const escaparHTML = texto => String(texto)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
 const totalIngresos = () => {
     let totalIngreso = 0;
 
@@ -140,6 +147,7 @@ const estaEditando = (tipo, id) => edicionActiva && edicionActiva.tipo === tipo 
 
 const crearFormularioEdicionHTML = (tipo, movimiento) => {
     const prefijo = tipo === "ingreso" ? "+" : "-";
+    const descripcionSegura = escaparHTML(movimiento.descripcion);
     const porcentajeHTML = tipo === "egreso"
         ? `<div class="elemento_porcentaje">${movimiento.getPorcentaje() > 0 ? `${movimiento.getPorcentaje()}%` : "---"}</div>`
         : "";
@@ -152,7 +160,7 @@ const crearFormularioEdicionHTML = (tipo, movimiento) => {
                     class="elemento_input"
                     id="editar-descripcion-${tipo}-${movimiento.id}"
                     type="text"
-                    value="${movimiento.descripcion}"
+                    value="${descripcionSegura}"
                 >
                 <div class="derecha limpiarEstilos">
                     <div class="elemento_valor">${formatoMonedaConSigno(prefijo === "+" ? movimiento.valor : -movimiento.valor)}</div>
@@ -183,16 +191,18 @@ const crearIngresoHTML = ingreso => {
         return crearFormularioEdicionHTML("ingreso", ingreso);
     }
 
+    const descripcionSegura = escaparHTML(ingreso.descripcion);
+
     const ingresoHTML = `
         <div class="elemento limpiarEstilos">
-            <div class="elemento_descripcion">${ingreso.descripcion}</div>
+            <div class="elemento_descripcion">${descripcionSegura}</div>
             <div class="derecha limpiarEstilos">
                 <div class="elemento_valor">${formatoMonedaConSigno(ingreso.valor)}</div>
                 <div class="elemento_acciones">
-                    <button class="elemento_editar--btn" type="button" title="Editar ingreso" aria-label="Editar ingreso ${ingreso.descripcion}" data-accion="editar" data-tipo="ingreso" data-id="${ingreso.id}">
+                    <button class="elemento_editar--btn" type="button" title="Editar ingreso" aria-label="Editar ingreso ${descripcionSegura}" data-accion="editar" data-tipo="ingreso" data-id="${ingreso.id}">
                         <ion-icon name="create-outline"></ion-icon>
                     </button>
-                    <button class="elemento_eliminar--btn" type="button" title="Eliminar ingreso" aria-label="Eliminar ingreso ${ingreso.descripcion}" data-accion="eliminar" data-tipo="ingreso" data-id="${ingreso.id}">
+                    <button class="elemento_eliminar--btn" type="button" title="Eliminar ingreso" aria-label="Eliminar ingreso ${descripcionSegura}" data-accion="eliminar" data-tipo="ingreso" data-id="${ingreso.id}">
                         <ion-icon name="close-circle-outline"></ion-icon>
                     </button>
                 </div>
@@ -227,17 +237,19 @@ const crearEgresoHTML = egreso => {
         return crearFormularioEdicionHTML("egreso", egreso);
     }
 
+    const descripcionSegura = escaparHTML(egreso.descripcion);
+
     const egresoHTML = `
         <div class="elemento limpiarEstilos">
-            <div class="elemento_descripcion">${egreso.descripcion}</div>
+            <div class="elemento_descripcion">${descripcionSegura}</div>
             <div class="derecha limpiarEstilos">
                 <div class="elemento_valor">${formatoMonedaConSigno(-egreso.valor)}</div>
                 <div class="elemento_porcentaje">${egreso.getPorcentaje() > 0 ? `${egreso.getPorcentaje()}%` : "---"}</div>
                 <div class="elemento_acciones">
-                    <button class="elemento_editar--btn" type="button" title="Editar egreso" aria-label="Editar egreso ${egreso.descripcion}" data-accion="editar" data-tipo="egreso" data-id="${egreso.id}">
+                    <button class="elemento_editar--btn" type="button" title="Editar egreso" aria-label="Editar egreso ${descripcionSegura}" data-accion="editar" data-tipo="egreso" data-id="${egreso.id}">
                         <ion-icon name="create-outline"></ion-icon>
                     </button>
-                    <button class="elemento_eliminar--btn" type="button" title="Eliminar egreso" aria-label="Eliminar egreso ${egreso.descripcion}" data-accion="eliminar" data-tipo="egreso" data-id="${egreso.id}">
+                    <button class="elemento_eliminar--btn" type="button" title="Eliminar egreso" aria-label="Eliminar egreso ${descripcionSegura}" data-accion="eliminar" data-tipo="egreso" data-id="${egreso.id}">
                         <ion-icon name="close-circle-outline"></ion-icon>
                     </button>
                 </div>
