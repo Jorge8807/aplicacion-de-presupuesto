@@ -6,7 +6,7 @@
     <title>Aplicacion de Presupuesto</title>
     <link rel="stylesheet" href="css/estilos.css">
 </head>
-<body onload="cargarApp()">
+<body>
     <header class="cabecero">
         <div class="presupuesto">
             <div class="presupuesto_titulo">
@@ -31,16 +31,16 @@
         </div>
     </header>
 
-    <form id="forma" onsubmit="return false">
+    <form id="forma">
         <div class="agregar">
             <div class="agregar_contenedor">
-                <select class="agregar_tipo" id="tipo" onchange="cambiarTipo()">
+                <select class="agregar_tipo" id="tipo">
                     <option value="ingreso" selected>+</option>
                     <option value="egreso">-</option>
                 </select>
                 <input type="text" class="agregar_descripcion" id="descripcion" placeholder="Agregar Descripcion">
                 <input type="number" class="agregar_valor" id="valor" placeholder="valor" step="any" min="0">
-                <button type="button" class="agregar_btn" id="btnAgregar" aria-label="Agregar movimiento" onclick="agregarDato()">
+                <button type="submit" class="agregar_btn" id="btnAgregar" aria-label="Agregar movimiento">
                     <ion-icon name="checkmark-circle-outline"></ion-icon>
                 </button>
             </div>

@@ -1,5 +1,15 @@
 const STORAGE_KEY = "aplicacion-presupuesto-datos";
 const STORAGE_VERSION = "3";
+const DATOS_INICIALES = {
+    ingresos: [
+        { descripcion: "Salario", valor: 2100 },
+        { descripcion: "Venta auto", valor: 1500 }
+    ],
+    egresos: [
+        { descripcion: "Renta", valor: 900 },
+        { descripcion: "Ropa", valor: 400 }
+    ]
+};
 
 const ingresos = [
     new Ingreso("Salario", 2100),
@@ -82,14 +92,8 @@ const cargarDatosGuardados = () => {
     } catch (error) {
         Ingreso.reiniciarContador();
         Egreso.reiniciarContador();
-        reemplazarColeccion(ingresos, [
-            { descripcion: "Salario", valor: 2100 },
-            { descripcion: "Venta auto", valor: 1500 }
-        ], Ingreso);
-        reemplazarColeccion(egresos, [
-            { descripcion: "Renta", valor: 900 },
-            { descripcion: "Ropa", valor: 400 }
-        ], Egreso);
+        reemplazarColeccion(ingresos, DATOS_INICIALES.ingresos, Ingreso);
+        reemplazarColeccion(egresos, DATOS_INICIALES.egresos, Egreso);
         guardarDatos();
     }
 };
@@ -123,8 +127,8 @@ const crearIngresoHTML = ingreso => {
             <div class="derecha limpiarEstilos">
                 <div class="elemento_valor">+ ${formatoMoneda(ingreso.valor)}</div>
                 <div class="elemento_eliminar">
-                    <button class="elemento_eliminar--btn" aria-label="Eliminar ingreso">
-                        <ion-icon name="close-circle-outline" onclick="eliminarIngreso(${ingreso.id})"></ion-icon>
+                    <button class="elemento_eliminar--btn" aria-label="Eliminar ingreso" data-tipo="ingreso" data-id="${ingreso.id}">
+                        <ion-icon name="close-circle-outline"></ion-icon>
                     </button>
                 </div>
             </div>
@@ -154,8 +158,8 @@ const crearEgresoHTML = egreso => {
                 <div class="elemento_valor">- ${formatoMoneda(egreso.valor)}</div>
                 <div class="elemento_porcentaje">${egreso.getPorcentaje() > 0 ? `${egreso.getPorcentaje()}%` : "---"}</div>
                 <div class="elemento_eliminar">
-                    <button class="elemento_eliminar--btn" aria-label="Eliminar egreso">
-                        <ion-icon name="close-circle-outline" onclick="eliminarEgreso(${egreso.id})"></ion-icon>
+                    <button class="elemento_eliminar--btn" aria-label="Eliminar egreso" data-tipo="egreso" data-id="${egreso.id}">
+                        <ion-icon name="close-circle-outline"></ion-icon>
                     </button>
                 </div>
             </div>
@@ -201,7 +205,11 @@ const limpiarCampos = () => {
     document.getElementById("descripcion").focus();
 };
 
-const agregarDato = () => {
+const agregarDato = evento => {
+    if (evento) {
+        evento.preventDefault();
+    }
+
     const forma = document.forms.forma;
     const tipo = forma.tipo.value;
     const descripcion = forma.descripcion.value.trim();
@@ -237,7 +245,35 @@ const cargarApp = () => {
     cargarEgresos();
 };
 
+const manejarEliminacion = evento => {
+    const botonEliminar = evento.target.closest("[data-tipo][data-id]");
+
+    if (!botonEliminar) {
+        return;
+    }
+
+    const id = Number.parseInt(botonEliminar.dataset.id, 10);
+
+    if (botonEliminar.dataset.tipo === "ingreso") {
+        eliminarIngreso(id);
+        return;
+    }
+
+    eliminarEgreso(id);
+};
+
+const configurarEventos = () => {
+    document.getElementById("forma").addEventListener("submit", agregarDato);
+    document.getElementById("tipo").addEventListener("change", cambiarTipo);
+    document.getElementById("lista-ingresos").addEventListener("click", manejarEliminacion);
+    document.getElementById("lista-egresos").addEventListener("click", manejarEliminacion);
+};
+
 cargarDatosGuardados();
+document.addEventListener("DOMContentLoaded", () => {
+    configurarEventos();
+    cargarApp();
+});
 
 window.totalIngresos = totalIngresos;
 window.totalEgresos = totalEgresos;
