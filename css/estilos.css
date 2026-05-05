@@ -4,6 +4,18 @@
     box-sizing: border-box;
 }
 
+.visualmente_oculto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .limpiarEstilos::after {
     content: "";
     display: table;
@@ -12,11 +24,12 @@
 
 body {
     color: #555;
-    font-family: Open Sans;
+    font-family: "Open Sans", sans-serif;
     font-size: 16px;
     position: relative;
     min-height: 100vh;
     font-weight: 400;
+    background-color: #fcfcfc;
 }
 
 .derecha { float: right; }
@@ -109,12 +122,17 @@ body {
 .agregar {
     padding: 14px;
     border-bottom: 1px solid #e7e7e7;
-    background-color: #f7f7f7;
+    background: linear-gradient(180deg, #fbfbfb 0%, #f2f2f2 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .agregar_contenedor {
     max-width: 1100px;
     margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     text-align: center;
 }
 
@@ -125,9 +143,9 @@ body {
     font-size: 18px;
     color: inherit;
     background-color: #fff;
-    margin-right: 10px;
     font-weight: 300;
-    transition: border 0.3s;
+    border-radius: 6px;
+    transition: border 0.3s, box-shadow 0.3s, transform 0.2s;
 }
 
 .agregar_descripcion,
@@ -138,36 +156,96 @@ body {
     font-family: inherit;
     font-size: 14px;
     padding: 12px 15px;
-    margin-right: 10px;
     border-radius: 5px;
-    transition: border 0.3s;
+    transition: border 0.3s, box-shadow 0.3s, transform 0.2s;
 }
 
-.agregar_descripcion { width: 400px;}
-.agregar_valor { width: 100px;}
+.agregar_descripcion {
+    width: 400px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.agregar_valor {
+    width: 120px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
 
 .agregar_btn {
     font-size: 35px;
-    background: none;
+    background: #fff;
     border: none;
     color: #28B9B5;
     cursor: pointer;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     vertical-align: middle;
     line-height: 1.1;
-    margin-left: 10px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    box-shadow: 0 6px 18px rgba(40, 185, 181, 0.18);
+    transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
-.agregar_btn:active { transform: translateY(2px); }
+.reiniciar_btn {
+    border: 1px solid #d8d8d8;
+    background-color: #fff;
+    color: #666;
+    padding: 12px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.reiniciar_btn:hover {
+    background-color: #f3f3f3;
+    border-color: #bdbdbd;
+    color: #333;
+    transform: translateY(-1px);
+}
+
+.agregar_btn:hover {
+    background-color: #f7ffff;
+    box-shadow: 0 8px 20px rgba(40, 185, 181, 0.24);
+    transform: translateY(-1px);
+}
+
+.agregar_btn:active,
+.reiniciar_btn:active { transform: translateY(1px); }
 
 .agregar_tipo:focus,
 .agregar_descripcion:focus,
 .agregar_valor:focus {
     outline: none;
     border: 1px solid #28B9B5;
+    box-shadow: 0 0 0 3px rgba(40, 185, 181, 0.14);
 }
 
-.agregar_btn:focus { outline: none; }
+.agregar_btn:focus,
+.reiniciar_btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(40, 185, 181, 0.18);
+}
+
+.formulario_mensaje {
+    min-height: 20px;
+    margin: 12px auto 0;
+    max-width: 700px;
+    font-size: 14px;
+    text-align: center;
+    color: #666;
+}
+
+.formulario_mensaje.error {
+    color: #FF5049;
+}
+
+.formulario_mensaje.exito {
+    color: #28B9B5;
+}
 
 .contenedor {
     width: 860px;
@@ -205,13 +283,57 @@ h2 {
 .elemento {
     padding: 13px;
     border-bottom: 1px solid #e7e7e7;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    animation: aparecerElemento 0.35s ease;
 }
 
 .elemento:first-child { border-top: 1px solid #e7e7e7; }
 .elemento:nth-child(even) { background-color: #f7f7f7; }
+.elemento:hover {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
 
 .elemento_descripcion {
     float: left;
+}
+
+.elemento_formulario {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.elemento_formulario--acciones {
+    margin-top: 12px;
+}
+
+.elemento_edicion {
+    background-color: #fffef7;
+    box-shadow: inset 0 0 0 1px rgba(40, 185, 181, 0.15);
+    border-left: 4px solid #28B9B5;
+    padding-left: 16px;
+}
+
+.elemento_input {
+    width: 100%;
+    border: 1px solid #d8d8d8;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: inherit;
+    background-color: #fff;
+}
+
+.elemento_input:focus {
+    outline: none;
+    border-color: #28B9B5;
+    box-shadow: 0 0 0 3px rgba(40, 185, 181, 0.14);
+}
+
+.elemento_input--valor {
+    max-width: 160px;
 }
 
 .elemento_valor {
@@ -247,6 +369,12 @@ h2 {
     float: left;
 }
 
+.elemento_acciones {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .elemento_eliminar--btn {
     font-size: 22px;
     background: none;
@@ -256,6 +384,7 @@ h2 {
     vertical-align: middle;
     line-height: 1;
     display: none;
+    transition: transform 0.2s, opacity 0.2s;
 }
 
 .elemento_eliminar--btn:focus { outline: none; }
@@ -264,6 +393,80 @@ h2 {
 .elemento:hover .elemento_eliminar--btn { display: block; }
 .elemento:hover .elemento_valor { transform: translateX(-20px); }
 .elemento:hover .elemento_porcentaje { transform: translateX(-20px); }
+
+.elemento_editar--btn {
+    font-size: 18px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: inline-block;
+    color: #7b7b7b;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s, color 0.2s;
+}
+
+.elemento:hover .elemento_editar--btn {
+    opacity: 1;
+}
+
+.elemento_editar--btn:hover,
+.elemento_editar--btn:focus {
+    color: #333;
+    outline: none;
+}
+
+.elemento_guardar--btn,
+.elemento_cancelar--btn {
+    border: none;
+    border-radius: 6px;
+    padding: 9px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: transform 0.2s, opacity 0.2s, background-color 0.2s;
+}
+
+.elemento_guardar--btn {
+    background-color: #28B9B5;
+    color: #fff;
+}
+
+.elemento_guardar--btn:hover,
+.elemento_guardar--btn:focus {
+    background-color: #1fa5a1;
+    outline: none;
+}
+
+.elemento_cancelar--btn {
+    background-color: #efefef;
+    color: #555;
+}
+
+.elemento_cancelar--btn:hover,
+.elemento_cancelar--btn:focus {
+    background-color: #e1e1e1;
+    outline: none;
+}
+
+.lista_vacia {
+    padding: 18px;
+    border: 1px dashed #d9d9d9;
+    border-radius: 8px;
+    color: #888;
+    background-color: #fafafa;
+    text-align: center;
+}
+
+@keyframes aparecerElemento {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 @media (max-width: 920px) {
     .presupuesto {
@@ -286,7 +489,8 @@ h2 {
     .agregar_tipo,
     .agregar_descripcion,
     .agregar_valor,
-    .agregar_btn {
+    .agregar_btn,
+    .reiniciar_btn {
         margin-right: 0;
     }
 
@@ -295,6 +499,10 @@ h2 {
     }
 
     .agregar_valor {
+        width: 180px;
+    }
+
+    .reiniciar_btn {
         width: 180px;
     }
 
@@ -344,5 +552,38 @@ h2 {
     .elemento:hover .elemento_valor,
     .elemento:hover .elemento_porcentaje {
         transform: none;
+    }
+
+    .elemento_formulario {
+        display: block;
+    }
+
+    .elemento_input,
+    .elemento_input--valor,
+    .elemento_acciones--edicion,
+    .elemento_guardar--btn,
+    .elemento_cancelar--btn {
+        width: 100%;
+        max-width: none;
+    }
+
+    .elemento_acciones--edicion {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .elemento_editar--btn,
+    .elemento:hover .elemento_editar--btn,
+    .agregar_btn,
+    .reiniciar_btn {
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    .elemento_editar--btn,
+    .elemento_eliminar--btn {
+        display: inline-block;
+        opacity: 1;
     }
 }

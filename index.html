@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplicacion de Presupuesto</title>
+    <title>Aplicación de Presupuesto</title>
     <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
@@ -12,19 +12,19 @@
             <div class="presupuesto_titulo">
                 Presupuesto disponible en <span class="presupuesto_titulo--mes">mayo de 2026</span>
             </div>
-            <div class="presupuesto_valor" id="presupuesto">+ 0.00 MXN</div>
+            <div class="presupuesto_valor" id="presupuesto">+ $0.00</div>
 
             <div class="presupuesto_ingreso limpiarEstilos">
                 <div class="presupuesto_ingreso--texto">Ingresos</div>
                 <div class="derecha">
-                    <div class="presupuesto_ingreso--valor" id="ingresos">+ 0.00 MXN</div>
+                    <div class="presupuesto_ingreso--valor" id="ingresos">+ $0.00</div>
                 </div>
             </div>
 
             <div class="presupuesto_egreso limpiarEstilos">
                 <div class="presupuesto_egreso--texto">Egresos</div>
                 <div class="derecha limpiarEstilos">
-                    <div class="presupuesto_egreso--valor" id="egresos">- 0.00 MXN</div>
+                    <div class="presupuesto_egreso--valor" id="egresos">- $0.00</div>
                     <div class="presupuesto_egreso--porcentaje" id="porcentaje">---</div>
                 </div>
             </div>
@@ -34,16 +34,23 @@
     <form id="forma">
         <div class="agregar">
             <div class="agregar_contenedor">
+                <label class="visualmente_oculto" for="tipo">Tipo de movimiento</label>
                 <select class="agregar_tipo" id="tipo">
                     <option value="ingreso" selected>+</option>
                     <option value="egreso">-</option>
                 </select>
-                <input type="text" class="agregar_descripcion" id="descripcion" placeholder="Agregar Descripcion">
-                <input type="number" class="agregar_valor" id="valor" placeholder="valor" step="any" min="0">
+                <label class="visualmente_oculto" for="descripcion">Descripción</label>
+                <input type="text" class="agregar_descripcion" id="descripcion" placeholder="Agregar descripción">
+                <label class="visualmente_oculto" for="valor">Valor</label>
+                <input type="number" class="agregar_valor" id="valor" placeholder="Valor" step="any" min="0">
                 <button type="submit" class="agregar_btn" id="btnAgregar" aria-label="Agregar movimiento">
                     <ion-icon name="checkmark-circle-outline"></ion-icon>
                 </button>
+                <button type="button" class="reiniciar_btn" id="btnReiniciar" aria-label="Restablecer datos">
+                    Reiniciar
+                </button>
             </div>
+            <p class="formulario_mensaje" id="formulario-mensaje" aria-live="assertive"></p>
         </div>
     </form>
 

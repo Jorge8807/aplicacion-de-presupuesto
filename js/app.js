@@ -3,17 +3,18 @@ const STORAGE_VERSION = "3";
 const DATOS_INICIALES = {
     ingresos: [
         { descripcion: "Salario", valor: 2100 },
-        { descripcion: "Venta auto", valor: 1500 }
+        { descripcion: "Venta de auto", valor: 1500 }
     ],
     egresos: [
         { descripcion: "Renta", valor: 900 },
         { descripcion: "Ropa", valor: 400 }
     ]
 };
+let edicionActiva = null;
 
 const ingresos = [
     new Ingreso("Salario", 2100),
-    new Ingreso("Venta auto", 1500)
+    new Ingreso("Venta de auto", 1500)
 ];
 
 const egresos = [
@@ -26,6 +27,11 @@ const formatoMoneda = valor => valor.toLocaleString("es-MX", {
     currency: "MXN",
     minimumFractionDigits: 2
 });
+
+const formatoMonedaConSigno = valor => {
+    const signo = valor < 0 ? "-" : "+";
+    return `${signo} ${formatoMoneda(Math.abs(valor))}`;
+};
 
 const formatoPorcentaje = valor => valor.toLocaleString("es-MX", {
     style: "percent",
@@ -73,6 +79,14 @@ const reemplazarColeccion = (destino, datosBase, Clase) => {
     }
 };
 
+const restaurarDatosIniciales = () => {
+    Ingreso.reiniciarContador();
+    Egreso.reiniciarContador();
+    reemplazarColeccion(ingresos, DATOS_INICIALES.ingresos, Ingreso);
+    reemplazarColeccion(egresos, DATOS_INICIALES.egresos, Egreso);
+    guardarDatos();
+};
+
 const cargarDatosGuardados = () => {
     const datosGuardados = localStorage.getItem(STORAGE_KEY);
     const versionGuardada = localStorage.getItem(`${STORAGE_KEY}-version`);
@@ -90,11 +104,7 @@ const cargarDatosGuardados = () => {
         reemplazarColeccion(ingresos, datos.ingresos || [], Ingreso);
         reemplazarColeccion(egresos, datos.egresos || [], Egreso);
     } catch (error) {
-        Ingreso.reiniciarContador();
-        Egreso.reiniciarContador();
-        reemplazarColeccion(ingresos, DATOS_INICIALES.ingresos, Ingreso);
-        reemplazarColeccion(egresos, DATOS_INICIALES.egresos, Egreso);
-        guardarDatos();
+        restaurarDatosIniciales();
     }
 };
 
@@ -106,28 +116,83 @@ const mostrarFecha = () => {
     document.querySelector(".presupuesto_titulo--mes").innerHTML = fecha;
 };
 
+const mostrarMensajeFormulario = (mensaje, tipo = "") => {
+    const elementoMensaje = document.getElementById("formulario-mensaje");
+    elementoMensaje.textContent = mensaje;
+    elementoMensaje.className = `formulario_mensaje${tipo ? ` ${tipo}` : ""}`;
+};
+
 const cargarCabecero = () => {
     const presupuesto = totalIngresos() - totalEgresos();
     const porcentajeEgreso = totalIngresos() > 0
         ? totalEgresos() / totalIngresos()
         : 0;
 
-    document.getElementById("presupuesto").innerHTML = formatoMoneda(presupuesto);
+    document.getElementById("presupuesto").innerHTML = formatoMonedaConSigno(presupuesto);
     document.getElementById("porcentaje").innerHTML = totalIngresos() > 0
         ? formatoPorcentaje(porcentajeEgreso)
         : "---";
-    document.getElementById("ingresos").innerHTML = formatoMoneda(totalIngresos());
-    document.getElementById("egresos").innerHTML = formatoMoneda(totalEgresos());
+    document.getElementById("ingresos").innerHTML = formatoMonedaConSigno(totalIngresos());
+    document.getElementById("egresos").innerHTML = formatoMonedaConSigno(-totalEgresos());
+};
+
+const estaEditando = (tipo, id) => edicionActiva && edicionActiva.tipo === tipo && edicionActiva.id === id;
+
+const crearFormularioEdicionHTML = (tipo, movimiento) => {
+    const prefijo = tipo === "ingreso" ? "+" : "-";
+    const porcentajeHTML = tipo === "egreso"
+        ? `<div class="elemento_porcentaje">${movimiento.getPorcentaje() > 0 ? `${movimiento.getPorcentaje()}%` : "---"}</div>`
+        : "";
+
+    return `
+        <div class="elemento limpiarEstilos elemento_edicion">
+            <div class="elemento_formulario">
+                <label class="visualmente_oculto" for="editar-descripcion-${tipo}-${movimiento.id}">Editar descripción</label>
+                <input
+                    class="elemento_input"
+                    id="editar-descripcion-${tipo}-${movimiento.id}"
+                    type="text"
+                    value="${movimiento.descripcion}"
+                >
+                <div class="derecha limpiarEstilos">
+                    <div class="elemento_valor">${formatoMonedaConSigno(prefijo === "+" ? movimiento.valor : -movimiento.valor)}</div>
+                    ${porcentajeHTML}
+                </div>
+            </div>
+            <div class="elemento_formulario elemento_formulario--acciones">
+                <label class="visualmente_oculto" for="editar-valor-${tipo}-${movimiento.id}">Editar valor</label>
+                <input
+                    class="elemento_input elemento_input--valor"
+                    id="editar-valor-${tipo}-${movimiento.id}"
+                    type="number"
+                    step="any"
+                    min="0"
+                    value="${movimiento.valor}"
+                >
+                <div class="elemento_acciones elemento_acciones--edicion">
+                    <button class="elemento_guardar--btn" type="button" data-accion="guardar" data-tipo="${tipo}" data-id="${movimiento.id}">Guardar</button>
+                    <button class="elemento_cancelar--btn" type="button" data-accion="cancelar" data-tipo="${tipo}" data-id="${movimiento.id}">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    `;
 };
 
 const crearIngresoHTML = ingreso => {
+    if (estaEditando("ingreso", ingreso.id)) {
+        return crearFormularioEdicionHTML("ingreso", ingreso);
+    }
+
     const ingresoHTML = `
         <div class="elemento limpiarEstilos">
             <div class="elemento_descripcion">${ingreso.descripcion}</div>
             <div class="derecha limpiarEstilos">
-                <div class="elemento_valor">+ ${formatoMoneda(ingreso.valor)}</div>
-                <div class="elemento_eliminar">
-                    <button class="elemento_eliminar--btn" aria-label="Eliminar ingreso" data-tipo="ingreso" data-id="${ingreso.id}">
+                <div class="elemento_valor">${formatoMonedaConSigno(ingreso.valor)}</div>
+                <div class="elemento_acciones">
+                    <button class="elemento_editar--btn" type="button" title="Editar ingreso" aria-label="Editar ingreso ${ingreso.descripcion}" data-accion="editar" data-tipo="ingreso" data-id="${ingreso.id}">
+                        <ion-icon name="create-outline"></ion-icon>
+                    </button>
+                    <button class="elemento_eliminar--btn" type="button" title="Eliminar ingreso" aria-label="Eliminar ingreso ${ingreso.descripcion}" data-accion="eliminar" data-tipo="ingreso" data-id="${ingreso.id}">
                         <ion-icon name="close-circle-outline"></ion-icon>
                     </button>
                 </div>
@@ -139,26 +204,40 @@ const crearIngresoHTML = ingreso => {
 };
 
 const cargarIngresos = () => {
+    const contenedorIngresos = document.getElementById("lista-ingresos");
+
+    if (ingresos.length === 0) {
+        contenedorIngresos.innerHTML = '<div class="lista_vacia">No hay ingresos registrados. Agrega uno desde el formulario.</div>';
+        return;
+    }
+
     let ingresosHTML = "";
 
     for (const ingreso of ingresos) {
         ingresosHTML += crearIngresoHTML(ingreso);
     }
 
-    document.getElementById("lista-ingresos").innerHTML = ingresosHTML;
+    contenedorIngresos.innerHTML = ingresosHTML;
 };
 
 const crearEgresoHTML = egreso => {
     egreso.calcularPorcentaje(totalIngresos());
 
+    if (estaEditando("egreso", egreso.id)) {
+        return crearFormularioEdicionHTML("egreso", egreso);
+    }
+
     const egresoHTML = `
         <div class="elemento limpiarEstilos">
             <div class="elemento_descripcion">${egreso.descripcion}</div>
             <div class="derecha limpiarEstilos">
-                <div class="elemento_valor">- ${formatoMoneda(egreso.valor)}</div>
+                <div class="elemento_valor">${formatoMonedaConSigno(-egreso.valor)}</div>
                 <div class="elemento_porcentaje">${egreso.getPorcentaje() > 0 ? `${egreso.getPorcentaje()}%` : "---"}</div>
-                <div class="elemento_eliminar">
-                    <button class="elemento_eliminar--btn" aria-label="Eliminar egreso" data-tipo="egreso" data-id="${egreso.id}">
+                <div class="elemento_acciones">
+                    <button class="elemento_editar--btn" type="button" title="Editar egreso" aria-label="Editar egreso ${egreso.descripcion}" data-accion="editar" data-tipo="egreso" data-id="${egreso.id}">
+                        <ion-icon name="create-outline"></ion-icon>
+                    </button>
+                    <button class="elemento_eliminar--btn" type="button" title="Eliminar egreso" aria-label="Eliminar egreso ${egreso.descripcion}" data-accion="eliminar" data-tipo="egreso" data-id="${egreso.id}">
                         <ion-icon name="close-circle-outline"></ion-icon>
                     </button>
                 </div>
@@ -170,32 +249,112 @@ const crearEgresoHTML = egreso => {
 };
 
 const cargarEgresos = () => {
+    const contenedorEgresos = document.getElementById("lista-egresos");
+
+    if (egresos.length === 0) {
+        contenedorEgresos.innerHTML = '<div class="lista_vacia">No hay egresos registrados. Agrega uno desde el formulario.</div>';
+        return;
+    }
+
     let egresosHTML = "";
 
     for (const egreso of egresos) {
         egresosHTML += crearEgresoHTML(egreso);
     }
 
-    document.getElementById("lista-egresos").innerHTML = egresosHTML;
+    contenedorEgresos.innerHTML = egresosHTML;
 };
 
 const eliminarIngreso = id => {
     const indiceEliminar = ingresos.findIndex(ingreso => ingreso.id === id);
 
-    if (indiceEliminar >= 0) {
+    if (indiceEliminar >= 0 && window.confirm("¿Deseas eliminar este ingreso?")) {
         ingresos.splice(indiceEliminar, 1);
+        edicionActiva = null;
         guardarDatos();
         cargarApp();
+        mostrarMensajeFormulario("Ingreso eliminado correctamente.", "exito");
+    }
+};
+
+const editarMovimiento = (tipo, id) => {
+    edicionActiva = { tipo, id };
+    cargarApp();
+    const inputDescripcion = document.getElementById(`editar-descripcion-${tipo}-${id}`);
+
+    if (inputDescripcion) {
+        inputDescripcion.focus();
+        inputDescripcion.select();
     }
 };
 
 const eliminarEgreso = id => {
     const indiceEliminar = egresos.findIndex(egreso => egreso.id === id);
 
-    if (indiceEliminar >= 0) {
+    if (indiceEliminar >= 0 && window.confirm("¿Deseas eliminar este egreso?")) {
         egresos.splice(indiceEliminar, 1);
+        edicionActiva = null;
         guardarDatos();
         cargarApp();
+        mostrarMensajeFormulario("Egreso eliminado correctamente.", "exito");
+    }
+};
+
+const cancelarEdicion = () => {
+    edicionActiva = null;
+    cargarApp();
+    mostrarMensajeFormulario("Edición cancelada.", "");
+};
+
+const guardarEdicion = (tipo, id) => {
+    const coleccion = tipo === "ingreso" ? ingresos : egresos;
+    const movimiento = coleccion.find(item => item.id === id);
+
+    if (!movimiento) {
+        return;
+    }
+
+    const inputDescripcion = document.getElementById(`editar-descripcion-${tipo}-${id}`);
+    const inputValor = document.getElementById(`editar-valor-${tipo}-${id}`);
+    const descripcion = inputDescripcion.value.trim();
+    const valor = Number.parseFloat(inputValor.value);
+
+    if (!descripcion) {
+        mostrarMensajeFormulario("La descripción no puede estar vacía.", "error");
+        inputDescripcion.focus();
+        return;
+    }
+
+    if (Number.isNaN(valor) || valor <= 0) {
+        mostrarMensajeFormulario("El valor editado debe ser mayor a cero.", "error");
+        inputValor.focus();
+        return;
+    }
+
+    movimiento.descripcion = descripcion;
+    movimiento.valor = valor;
+    edicionActiva = null;
+    guardarDatos();
+    cargarApp();
+    mostrarMensajeFormulario("Movimiento actualizado correctamente.", "exito");
+};
+
+const manejarTecladoEdicion = evento => {
+    const inputEdicion = evento.target.closest(".elemento_input");
+
+    if (!inputEdicion || !edicionActiva) {
+        return;
+    }
+
+    if (evento.key === "Enter") {
+        evento.preventDefault();
+        guardarEdicion(edicionActiva.tipo, edicionActiva.id);
+        return;
+    }
+
+    if (evento.key === "Escape") {
+        evento.preventDefault();
+        cancelarEdicion();
     }
 };
 
@@ -216,6 +375,7 @@ const agregarDato = evento => {
     const valor = Number.parseFloat(forma.valor.value);
 
     if (!descripcion || Number.isNaN(valor) || valor <= 0) {
+        mostrarMensajeFormulario("Escribe una descripción y un valor mayor a cero.", "error");
         return false;
     }
 
@@ -228,6 +388,7 @@ const agregarDato = evento => {
     guardarDatos();
     cargarApp();
     limpiarCampos();
+    mostrarMensajeFormulario("Movimiento agregado correctamente.", "exito");
     return false;
 };
 
@@ -238,6 +399,13 @@ const cambiarTipo = () => {
     document.getElementById("btnAgregar").classList.toggle("rojo");
 };
 
+const reiniciarDatos = () => {
+    restaurarDatosIniciales();
+    edicionActiva = null;
+    cargarApp();
+    mostrarMensajeFormulario("Datos restablecidos al estado inicial.", "exito");
+};
+
 const cargarApp = () => {
     mostrarFecha();
     cargarCabecero();
@@ -246,27 +414,50 @@ const cargarApp = () => {
 };
 
 const manejarEliminacion = evento => {
-    const botonEliminar = evento.target.closest("[data-tipo][data-id]");
+    const botonEliminar = evento.target.closest("button[data-accion][data-tipo][data-id]");
 
     if (!botonEliminar) {
         return;
     }
 
-    const id = Number.parseInt(botonEliminar.dataset.id, 10);
-
-    if (botonEliminar.dataset.tipo === "ingreso") {
-        eliminarIngreso(id);
+    if (botonEliminar.dataset.accion === "editar") {
+        editarMovimiento(botonEliminar.dataset.tipo, Number.parseInt(botonEliminar.dataset.id, 10));
         return;
     }
 
-    eliminarEgreso(id);
+    if (botonEliminar.dataset.accion === "guardar") {
+        guardarEdicion(botonEliminar.dataset.tipo, Number.parseInt(botonEliminar.dataset.id, 10));
+        return;
+    }
+
+    if (botonEliminar.dataset.accion === "cancelar") {
+        cancelarEdicion();
+        return;
+    }
+
+    if (botonEliminar.dataset.accion === "eliminar") {
+        const id = Number.parseInt(botonEliminar.dataset.id, 10);
+
+        if (botonEliminar.dataset.tipo === "ingreso") {
+            eliminarIngreso(id);
+            return;
+        }
+
+        eliminarEgreso(id);
+        return;
+    }
+
+    const id = Number.parseInt(botonEliminar.dataset.id, 10);
 };
 
 const configurarEventos = () => {
     document.getElementById("forma").addEventListener("submit", agregarDato);
     document.getElementById("tipo").addEventListener("change", cambiarTipo);
+    document.getElementById("btnReiniciar").addEventListener("click", reiniciarDatos);
     document.getElementById("lista-ingresos").addEventListener("click", manejarEliminacion);
     document.getElementById("lista-egresos").addEventListener("click", manejarEliminacion);
+    document.getElementById("lista-ingresos").addEventListener("keydown", manejarTecladoEdicion);
+    document.getElementById("lista-egresos").addEventListener("keydown", manejarTecladoEdicion);
 };
 
 cargarDatosGuardados();
@@ -285,3 +476,5 @@ window.agregarDato = agregarDato;
 window.eliminarIngreso = eliminarIngreso;
 window.eliminarEgreso = eliminarEgreso;
 window.cambiarTipo = cambiarTipo;
+window.reiniciarDatos = reiniciarDatos;
+window.editarMovimiento = editarMovimiento;
