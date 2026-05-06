@@ -1,26 +1,14 @@
 const STORAGE_KEY = "aplicacion-presupuesto-datos";
 const STORAGE_VERSION = "3";
 const DATOS_INICIALES = {
-    ingresos: [
-        { descripcion: "Salario", valor: 2100 },
-        { descripcion: "Venta de auto", valor: 1500 }
-    ],
-    egresos: [
-        { descripcion: "Renta", valor: 900 },
-        { descripcion: "Ropa", valor: 400 }
-    ]
+    ingresos: [],
+    egresos: []
 };
 let edicionActiva = null;
 
-const ingresos = [
-    new Ingreso("Salario", 2100),
-    new Ingreso("Venta de auto", 1500)
-];
+const ingresos = [];
 
-const egresos = [
-    new Egreso("Renta", 900),
-    new Egreso("Ropa", 400)
-];
+const egresos = [];
 
 const formatoMoneda = valor => valor.toLocaleString("es-MX", {
     style: "currency",
@@ -33,10 +21,44 @@ const formatoMonedaConSigno = valor => {
     return `${signo} ${formatoMoneda(Math.abs(valor))}`;
 };
 
+const formatoMonedaPresupuesto = valor => {
+    const signo = valor < 0 ? "-" : "";
+    return `${signo}${signo ? " " : ""}${formatoMoneda(Math.abs(valor))}`;
+};
+
+const formatoMonedaEgreso = valor => {
+    const signo = valor > 0 ? "-" : "";
+    return `${signo}${signo ? " " : ""}${formatoMoneda(Math.abs(valor))}`;
+};
+
 const formatoPorcentaje = valor => valor.toLocaleString("es-MX", {
     style: "percent",
     minimumFractionDigits: 2
 });
+
+const obtenerPorcentajeTotalEgresos = (ingresosTotales, egresosTotales) => {
+    if (ingresosTotales === 0 && egresosTotales === 0) {
+        return 0;
+    }
+
+    if (ingresosTotales > 0) {
+        return egresosTotales / ingresosTotales;
+    }
+
+    if (egresosTotales > 0) {
+        return 1;
+    }
+
+    return -1;
+};
+
+const obtenerPorcentajeDisponible = (presupuesto, ingresosTotales) => {
+    if (ingresosTotales <= 0) {
+        return 0;
+    }
+
+    return presupuesto / ingresosTotales;
+};
 
 const escaparHTML = texto => String(texto)
     .replaceAll("&", "&amp;")
@@ -99,6 +121,7 @@ const cargarDatosGuardados = () => {
     const versionGuardada = localStorage.getItem(`${STORAGE_KEY}-version`);
 
     if (!datosGuardados || versionGuardada !== STORAGE_VERSION) {
+        restaurarDatosIniciales();
         guardarDatos();
         return;
     }
@@ -120,7 +143,8 @@ const mostrarFecha = () => {
         month: "long",
         year: "numeric"
     });
-    document.querySelector(".presupuesto_titulo--mes").innerHTML = fecha;
+    const fechaCapitalizada = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+    document.querySelector(".presupuesto_titulo--mes").innerHTML = fechaCapitalizada;
 };
 
 const mostrarMensajeFormulario = (mensaje, tipo = "") => {
@@ -130,17 +154,20 @@ const mostrarMensajeFormulario = (mensaje, tipo = "") => {
 };
 
 const cargarCabecero = () => {
-    const presupuesto = totalIngresos() - totalEgresos();
-    const porcentajeEgreso = totalIngresos() > 0
-        ? totalEgresos() / totalIngresos()
-        : 0;
-
-    document.getElementById("presupuesto").innerHTML = formatoMonedaConSigno(presupuesto);
-    document.getElementById("porcentaje").innerHTML = totalIngresos() > 0
-        ? formatoPorcentaje(porcentajeEgreso)
+    const ingresosTotales = totalIngresos();
+    const egresosTotales = totalEgresos();
+    const presupuesto = ingresosTotales - egresosTotales;
+    const porcentajeTotalEgresos = obtenerPorcentajeTotalEgresos(ingresosTotales, egresosTotales);
+    const porcentajeDisponible = obtenerPorcentajeDisponible(presupuesto, ingresosTotales);
+    const porcentajeEgresoHTML = porcentajeTotalEgresos >= 0
+        ? formatoPorcentaje(porcentajeTotalEgresos)
         : "---";
-    document.getElementById("ingresos").innerHTML = formatoMonedaConSigno(totalIngresos());
-    document.getElementById("egresos").innerHTML = formatoMonedaConSigno(-totalEgresos());
+
+    document.getElementById("presupuesto").innerHTML = formatoMonedaPresupuesto(presupuesto);
+    document.getElementById("presupuesto-resumen").innerHTML = `Disponible: ${formatoPorcentaje(porcentajeDisponible)} de tus ingresos`;
+    document.getElementById("porcentaje").innerHTML = porcentajeEgresoHTML;
+    document.getElementById("ingresos").innerHTML = formatoMonedaConSigno(ingresosTotales);
+    document.getElementById("egresos").innerHTML = formatoMonedaEgreso(egresosTotales);
 };
 
 const estaEditando = (tipo, id) => edicionActiva && edicionActiva.tipo === tipo && edicionActiva.id === id;
@@ -149,7 +176,7 @@ const crearFormularioEdicionHTML = (tipo, movimiento) => {
     const prefijo = tipo === "ingreso" ? "+" : "-";
     const descripcionSegura = escaparHTML(movimiento.descripcion);
     const porcentajeHTML = tipo === "egreso"
-        ? `<div class="elemento_porcentaje">${movimiento.getPorcentaje() > 0 ? `${movimiento.getPorcentaje()}%` : "---"}</div>`
+        ? `<div class="elemento_porcentaje">${movimiento.getPorcentaje() > 0 ? formatoPorcentaje(movimiento.getPorcentaje()) : "---"}</div>`
         : "";
 
     return `
@@ -231,7 +258,7 @@ const cargarIngresos = () => {
 };
 
 const crearEgresoHTML = egreso => {
-    egreso.calcularPorcentaje(totalIngresos());
+    egreso.calcularPorcentaje(totalIngresos(), totalEgresos());
 
     if (estaEditando("egreso", egreso.id)) {
         return crearFormularioEdicionHTML("egreso", egreso);
@@ -244,7 +271,7 @@ const crearEgresoHTML = egreso => {
             <div class="elemento_descripcion">${descripcionSegura}</div>
             <div class="derecha limpiarEstilos">
                 <div class="elemento_valor">${formatoMonedaConSigno(-egreso.valor)}</div>
-                <div class="elemento_porcentaje">${egreso.getPorcentaje() > 0 ? `${egreso.getPorcentaje()}%` : "---"}</div>
+                <div class="elemento_porcentaje">${egreso.getPorcentaje() > 0 ? formatoPorcentaje(egreso.getPorcentaje()) : "---"}</div>
                 <div class="elemento_acciones">
                     <button class="elemento_editar--btn" type="button" title="Editar egreso" aria-label="Editar egreso ${descripcionSegura}" data-accion="editar" data-tipo="egreso" data-id="${egreso.id}">
                         <ion-icon name="create-outline"></ion-icon>
@@ -415,7 +442,7 @@ const reiniciarDatos = () => {
     restaurarDatosIniciales();
     edicionActiva = null;
     cargarApp();
-    mostrarMensajeFormulario("Datos restablecidos al estado inicial.", "exito");
+    mostrarMensajeFormulario("Datos reiniciados correctamente.", "exito");
 };
 
 const cargarApp = () => {

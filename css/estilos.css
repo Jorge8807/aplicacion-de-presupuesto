@@ -66,12 +66,42 @@ body {
     font-weight: 300;
 }
 
+.presupuesto_titulo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 18px;
+}
+
+.presupuesto_titulo--principal {
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: 0.03em;
+}
+
+.presupuesto_titulo--mes {
+    font-size: 21px;
+    font-weight: 300;
+    line-height: 1.1;
+}
+
 .presupuesto_valor {
     font-weight: 300;
     font-size: 46px;
     text-align: center;
     margin-bottom: 25px;
     letter-spacing: 2px;
+}
+
+.presupuesto_resumen {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    margin: -10px 0 24px;
 }
 
 .presupuesto_ingreso,

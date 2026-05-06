@@ -11,9 +11,14 @@ class Egreso extends Dato {
         return this._id;
     }
 
-    calcularPorcentaje(ingresoTotal) {
+    calcularPorcentaje(ingresoTotal, egresoTotal = 0) {
         if (ingresoTotal > 0) {
-            this._porcentaje = Math.round((this.valor / ingresoTotal) * 100);
+            this._porcentaje = this.valor / ingresoTotal;
+            return;
+        }
+
+        if (egresoTotal > 0) {
+            this._porcentaje = this.valor / egresoTotal;
             return;
         }
 
